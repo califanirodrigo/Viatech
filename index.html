@@ -385,7 +385,7 @@
     }
 
     .verification-table {
-      background: #fff7e6;
+      background: #ffffff;
     }
 
     .verification-table th {
@@ -394,18 +394,17 @@
     }
 
     .verification-table td {
-      background: #fff7e6;
-      color: #2f2612;
+      background: #ffffff;
     }
 
     .verification-table .team-cell {
-      color: #2f2612;
-      border-left: 4px solid #d39b2a;
+      color: #183441;
+      border-left: 4px solid var(--blue);
     }
 
     .verification-table .diff-row td:not(.team-cell) {
-      background: #fff7e6;
-      color: #2f2612;
+      background: #ffffff;
+      color: var(--text);
     }
 
     .verification-table .difference-positive,
@@ -422,8 +421,8 @@
     }
 
     .verification-table tfoot td {
-      background: #ffe9b8;
-      color: #2f2612;
+      background: #f3f9fc;
+      color: #183441;
     }
 
     body[data-theme="dark"] .verification-table {
@@ -436,21 +435,24 @@
     }
 
     body[data-theme="dark"] .verification-table td {
+      background: #0b202a;
+      color: #e9f8ff;
       border-color: #3c6674;
     }
 
     body[data-theme="dark"] .verification-table .diff-row td:not(.team-cell) {
-      background: #473b18;
-      color: #fff6d8;
+      background: #0b202a;
+      color: #e9f8ff;
     }
 
     body[data-theme="dark"] .verification-table tfoot td {
-      background: #173847;
+      background: #0b202a;
       color: #f2fbff;
     }
 
     body[data-theme="dark"] .verification-table .team-cell {
       color: #f5fbff;
+      background: #0b202a;
       border-color: #4d7180;
     }
 
@@ -921,17 +923,6 @@
       }
 
       return colors[hash];
-    }
-
-    function getExportTeamColor(team) {
-      const text = String(team || '');
-      let hash = 0;
-
-      for (let index = 0; index < text.length; index += 1) {
-        hash = (hash + text.charCodeAt(index) * (index + 1)) % teamColors.length;
-      }
-
-      return teamColors[hash];
     }
 
     function normalizeReportTeamName(team) {
@@ -1643,14 +1634,12 @@
 
       rows.forEach((row) => {
         const tr = document.createElement('tr');
-        const teamColor = getTeamColor(row.team);
 
         if (!renderedTeams.has(row.team)) {
           const teamCell = document.createElement('td');
           teamCell.textContent = row.team;
           teamCell.rowSpan = teamSizes.get(row.team);
           teamCell.className = 'team-cell';
-          teamCell.style.backgroundColor = teamColor;
           tr.appendChild(teamCell);
           renderedTeams.add(row.team);
         }
@@ -1787,19 +1776,15 @@
     }
 
     function buildReportRowsHtml(rows) {
-      return rows.map((row) => {
-        const teamColor = getExportTeamColor(row.team);
-
-        return `
-        <tr style="background-color: ${teamColor};">
-          <td class="export-team-cell" style="background-color: ${teamColor};">${escapeHtml(row.team)}</td>
-          <td style="background-color: ${teamColor};">${escapeHtml(row.date)}</td>
-          <td style="background-color: ${teamColor};">${formatValue(row.mainTotal)}</td>
-          <td style="background-color: ${teamColor};">${formatValue(row.measurementTotal)}</td>
-          <td style="background-color: ${teamColor};">${formatValue(row.difference)}</td>
+      return rows.map((row) => `
+        <tr>
+          <td class="export-team-cell">${escapeHtml(row.team)}</td>
+          <td>${escapeHtml(row.date)}</td>
+          <td>${formatValue(row.mainTotal)}</td>
+          <td>${formatValue(row.measurementTotal)}</td>
+          <td>${formatValue(row.difference)}</td>
         </tr>
-      `;
-      }).join('');
+      `).join('');
     }
 
     function buildReportDocumentHtml() {
