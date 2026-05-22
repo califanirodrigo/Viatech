@@ -292,6 +292,19 @@
       letter-spacing: 0;
     }
 
+    .title-total {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      color: var(--blue-dark);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    body[data-theme="dark"] .title-total {
+      color: var(--cyan);
+    }
+
     .inline-panel-title p {
       margin: 0;
       color: var(--muted);
@@ -372,7 +385,7 @@
     }
 
     .verification-table {
-      background: #ffffff;
+      background: #fff7e6;
     }
 
     .verification-table th {
@@ -381,21 +394,17 @@
     }
 
     .verification-table td {
-      background: #ffffff;
-    }
-
-    .verification-table .team-cell {
-      color: #183441;
-      border-left: 4px solid var(--blue);
-    }
-
-    .verification-table .diff-row td:not(.team-cell) {
       background: #fff7e6;
       color: #2f2612;
     }
 
-    .verification-table .diff-row .team-cell {
-      background: #fff7e6 !important;
+    .verification-table .team-cell {
+      color: #2f2612;
+      border-left: 4px solid #d39b2a;
+    }
+
+    .verification-table .diff-row td:not(.team-cell) {
+      background: #fff7e6;
       color: #2f2612;
     }
 
@@ -413,8 +422,8 @@
     }
 
     .verification-table tfoot td {
-      background: #f3f9fc;
-      color: #183441;
+      background: #ffe9b8;
+      color: #2f2612;
     }
 
     body[data-theme="dark"] .verification-table {
@@ -432,11 +441,6 @@
 
     body[data-theme="dark"] .verification-table .diff-row td:not(.team-cell) {
       background: #473b18;
-      color: #fff6d8;
-    }
-
-    body[data-theme="dark"] .verification-table .diff-row .team-cell {
-      background: #473b18 !important;
       color: #fff6d8;
     }
 
@@ -710,10 +714,10 @@
       <div id="results" class="results">
         <div class="empty">Inclua uma ou mais planilhas para gerar o resumo.</div>
       </div>
-      <div class="inline-panel" aria-label="Medição por equipe">
+      <div class="inline-panel" aria-label="Medição parcial por equipe">
         <div class="inline-panel-header">
           <div class="inline-panel-title">
-            <h2>Medição por equipe</h2>
+            <h2>Medição parcial por equipe <strong class="title-total" id="team-measurement-title-total"></strong></h2>
             <p>Inclua planilhas para listar os dias e a soma total de medição por dia.</p>
           </div>
           <div class="actions">
@@ -722,29 +726,15 @@
             <button type="button" class="danger" id="team-measurement-clear-button">Limpar</button>
           </div>
         </div>
-        <div class="summary">
-          <div class="metric">
-            <span>Planilhas</span>
-            <strong id="team-measurement-files-count">0</strong>
-          </div>
-          <div class="metric">
-            <span>Dias</span>
-            <strong id="team-measurement-days-count">0</strong>
-          </div>
-          <div class="metric">
-            <span>Total</span>
-            <strong id="team-measurement-grand-total">0</strong>
-          </div>
-        </div>
         <div id="team-measurement-results" class="results">
           <div class="empty">Inclua planilhas para gerar a medição por equipe.</div>
         </div>
         <div id="team-measurement-status" class="status"></div>
       </div>
-      <div class="inline-panel" aria-label="Verificação">
+      <div class="inline-panel" aria-label="Relatório">
         <div class="inline-panel-header">
           <div class="inline-panel-title">
-            <h2>Verificação</h2>
+            <h2>Relatório</h2>
             <p>Compare o quadro filtrado por equipe com a medição por equipe, data por data.</p>
           </div>
           <div class="actions">
@@ -768,24 +758,21 @@
         <div id="verification-results" class="results">
           <div class="empty">Clique em Verificar para comparar os dados.</div>
         </div>
+        <div class="inline-panel" aria-label="Salvar relatório">
+          <div class="inline-panel-header">
+            <div class="inline-panel-title">
+              <h2>Salvar relatório</h2>
+              <p>Exporta o relatório com logo e comparação por equipe.</p>
+            </div>
+            <div class="actions">
+              <button type="button" id="export-xls-button">Salvar .xls</button>
+              <button type="button" id="export-pdf-button">Salvar .pdf</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div id="dashboard" class="dashboard">
         <div class="empty">O dashboard será exibido após incluir as planilhas.</div>
-      </div>
-      <div class="inline-panel" aria-label="Relatório total">
-        <div class="inline-panel-header">
-          <div class="inline-panel-title">
-            <h2>Relatório total</h2>
-            <p>Relação unificada por equipe, datas e valores totais.</p>
-          </div>
-          <div class="actions">
-            <button type="button" id="export-xls-button">Salvar .xls</button>
-            <button type="button" id="export-pdf-button">Salvar .pdf</button>
-          </div>
-        </div>
-        <div id="total-report-results" class="results">
-          <div class="empty">Inclua planilhas para gerar o relatório total.</div>
-        </div>
       </div>
       <div id="status" class="status"></div>
     </section>
@@ -934,6 +921,28 @@
       }
 
       return colors[hash];
+    }
+
+    function getExportTeamColor(team) {
+      const text = String(team || '');
+      let hash = 0;
+
+      for (let index = 0; index < text.length; index += 1) {
+        hash = (hash + text.charCodeAt(index) * (index + 1)) % teamColors.length;
+      }
+
+      return teamColors[hash];
+    }
+
+    function normalizeReportTeamName(team) {
+      const text = String(team || '').trim();
+      if (!text) return '';
+
+      const normalized = normalizeHeader(text);
+      if (normalized.includes('sinalex')) return 'Sinalex';
+      if (normalized.includes('william') || normalized.includes('willian')) return 'Sinalizadora';
+
+      return text;
     }
 
     function formatDate(value) {
@@ -1304,7 +1313,7 @@
 
       dashboard.innerHTML = `
         <div class="dashboard-header">
-          <h2>Dashboard de P / C</h2>
+          <h2>Dashboard</h2>
           <p>Filtro atual: ${selectedTeam}</p>
         </div>
         <div class="dashboard-grid">
@@ -1343,7 +1352,6 @@
 
       const totalRecords = rows.length;
       const grandTotal = rows.reduce((total, row) => total + row.pcTotal, 0);
-      const grandCount = rows.reduce((total, row) => total + row.pcCount, 0);
 
       getEl('files-count').textContent = state.files;
       getEl('records-count').textContent = totalRecords;
@@ -1360,15 +1368,13 @@
           <tr>
             <th>Equipe</th>
             <th>Dia</th>
-            <th class="number">Quantidade de P / C</th>
-            <th class="number">Soma P / C</th>
+            <th class="number">QTDE</th>
           </tr>
         </thead>
         <tbody></tbody>
         <tfoot>
           <tr>
-            <td colspan="2">Total</td>
-            <td class="number"></td>
+            <td colspan="2">Total lançado no sistema</td>
             <td class="number"></td>
           </tr>
         </tfoot>
@@ -1404,16 +1410,12 @@
         }
 
         const dateCell = document.createElement('td');
-        const countCell = document.createElement('td');
         const totalCell = document.createElement('td');
 
         dateCell.textContent = row.date;
-        countCell.textContent = row.pcCount;
-        countCell.className = 'number';
         totalCell.textContent = formatValue(row.pcTotal);
         totalCell.className = 'number';
         tr.appendChild(dateCell);
-        tr.appendChild(countCell);
         tr.appendChild(totalCell);
 
         tbody.appendChild(tr);
@@ -1426,19 +1428,16 @@
           totalRow.innerHTML = `
             <td colspan="2"></td>
             <td class="number"></td>
-            <td class="number"></td>
           `;
           totalRow.style.backgroundColor = teamColor;
           totalRow.children[0].textContent = `Total da equipe: ${row.team}`;
-          totalRow.children[1].textContent = teamTotal.count;
-          totalRow.children[2].textContent = formatValue(teamTotal.total);
+          totalRow.children[1].textContent = formatValue(teamTotal.total);
           tbody.appendChild(totalRow);
         }
       });
 
       const footerCells = table.querySelectorAll('tfoot td');
-      footerCells[1].textContent = grandCount;
-      footerCells[2].textContent = formatValue(grandTotal);
+      footerCells[1].textContent = formatValue(grandTotal);
 
       results.innerHTML = '';
       results.appendChild(table);
@@ -1474,10 +1473,7 @@
 
       const grandTotal = rows.reduce((total, row) => total + row.total, 0);
       const grandCount = rows.reduce((total, row) => total + row.count, 0);
-
-      getEl('team-measurement-files-count').textContent = teamMeasurementState.files;
-      getEl('team-measurement-days-count').textContent = rows.length;
-      getEl('team-measurement-grand-total').textContent = formatValue(grandTotal);
+      getEl('team-measurement-title-total').textContent = grandTotal > 0 ? formatValue(grandTotal) : '';
 
       if (rows.length === 0) {
         results.innerHTML = '<div class="empty">Inclua planilhas para gerar a medição por equipe.</div>';
@@ -1497,7 +1493,7 @@
         <tbody></tbody>
         <tfoot>
           <tr>
-            <td colspan="2">Total da medição por equipe</td>
+            <td colspan="2">Total</td>
             <td class="number"></td>
             <td class="number"></td>
           </tr>
@@ -1574,12 +1570,13 @@
     }
 
     function getMainComparisonRows() {
-      const selectedTeam = getEl('team-filter').value;
+      const selectedTeam = normalizeReportTeamName(getEl('team-filter').value);
       return Array.from(state.groups.values())
-        .filter((row) => !selectedTeam || row.team === selectedTeam)
+        .filter((row) => !selectedTeam || normalizeReportTeamName(row.team) === selectedTeam)
         .reduce((groups, row) => {
-          const key = `${row.team}||${row.date}`;
-          const current = groups.get(key) || { team: row.team, date: row.date, mainTotal: 0, measurementTotal: 0 };
+          const team = normalizeReportTeamName(row.team) || 'Sem equipe';
+          const key = `${team}||${row.date}`;
+          const current = groups.get(key) || { team, date: row.date, mainTotal: 0, measurementTotal: 0 };
           current.mainTotal += row.pcTotal;
           groups.set(key, current);
           return groups;
@@ -1587,11 +1584,11 @@
     }
 
     function getTeamMeasurementComparisonRows() {
-      const selectedTeam = getEl('team-filter').value;
+      const selectedTeam = normalizeReportTeamName(getEl('team-filter').value);
       return teamMeasurementState.totals
-        .filter((row) => !selectedTeam || (row.team || 'Sem equipe') === selectedTeam)
+        .filter((row) => !selectedTeam || normalizeReportTeamName(row.team || 'Sem equipe') === selectedTeam)
         .reduce((groups, row) => {
-          const team = row.team || 'Sem equipe';
+          const team = normalizeReportTeamName(row.team || 'Sem equipe') || 'Sem equipe';
           const key = `${team}||${row.date}`;
           const current = groups.get(key) || { team, date: row.date, mainTotal: 0, measurementTotal: 0 };
           current.measurementTotal += row.total;
@@ -1602,21 +1599,7 @@
 
     function renderVerificationResults() {
       const results = getEl('verification-results');
-      const mainRows = getMainComparisonRows();
-      const measurementRows = getTeamMeasurementComparisonRows();
-
-      measurementRows.forEach((row, key) => {
-        const current = mainRows.get(key) || row;
-        current.measurementTotal = row.measurementTotal;
-        mainRows.set(key, current);
-      });
-
-      const rows = Array.from(mainRows.values())
-        .map((row) => ({
-          ...row,
-          difference: row.mainTotal - row.measurementTotal
-        }))
-        .sort((a, b) => a.team.localeCompare(b.team, 'pt-BR') || a.date.localeCompare(b.date, 'pt-BR'));
+      const rows = getComparisonReportRows();
 
       const diffs = rows.filter((row) => Math.abs(row.difference) > 0.00001);
       const balance = rows.reduce((total, row) => total + row.difference, 0);
@@ -1637,8 +1620,8 @@
           <tr>
             <th>Equipe</th>
             <th>Data</th>
-            <th class="number">Filtrar equipe</th>
-            <th class="number">Medição por equipe</th>
+            <th class="number">Lanç. Sistema</th>
+            <th class="number">Medição</th>
             <th class="number">Diferença</th>
           </tr>
         </thead>
@@ -1707,37 +1690,17 @@
       results.appendChild(table);
     }
 
-    function getUnifiedReportRows() {
-      const rowsByKey = new Map();
+    function getComparisonReportRows() {
+      const mainRows = getMainComparisonRows();
+      const measurementRows = getTeamMeasurementComparisonRows();
 
-      Array.from(state.groups.values()).forEach((row) => {
-        const key = `${row.team}||${row.date}`;
-        const current = rowsByKey.get(key) || {
-          team: row.team,
-          date: row.date,
-          mainTotal: 0,
-          measurementTotal: 0
-        };
-
-        current.mainTotal += row.pcTotal;
-        rowsByKey.set(key, current);
+      measurementRows.forEach((row, key) => {
+        const current = mainRows.get(key) || row;
+        current.measurementTotal = row.measurementTotal;
+        mainRows.set(key, current);
       });
 
-      teamMeasurementState.totals.forEach((row) => {
-        const team = row.team || 'Sem equipe';
-        const key = `${team}||${row.date}`;
-        const current = rowsByKey.get(key) || {
-          team,
-          date: row.date,
-          mainTotal: 0,
-          measurementTotal: 0
-        };
-
-        current.measurementTotal += row.total;
-        rowsByKey.set(key, current);
-      });
-
-      return Array.from(rowsByKey.values())
+      return Array.from(mainRows.values())
         .map((row) => ({
           ...row,
           difference: row.mainTotal - row.measurementTotal
@@ -1745,203 +1708,186 @@
         .sort((a, b) => a.team.localeCompare(b.team, 'pt-BR') || a.date.localeCompare(b.date, 'pt-BR'));
     }
 
-    function getGroupedReportRows() {
-      const rows = getUnifiedReportRows();
-      return Array.from(rows.reduce((groups, row) => {
-        const current = groups.get(row.team) || {
-          team: row.team,
-          rows: [],
-          mainTotal: 0,
-          measurementTotal: 0,
-          difference: 0
-        };
-
-        current.rows.push(row);
-        current.mainTotal += row.mainTotal;
-        current.measurementTotal += row.measurementTotal;
-        current.difference += row.difference;
-        groups.set(row.team, current);
-        return groups;
-      }, new Map()).values());
+    function getCurrentDashboardRows() {
+      const selectedTeam = getEl('team-filter').value;
+      return Array.from(state.groups.values())
+        .filter((row) => !selectedTeam || row.team === selectedTeam)
+        .sort((a, b) => a.team.localeCompare(b.team, 'pt-BR') || a.date.localeCompare(b.date, 'pt-BR'));
     }
 
-    function renderTotalReport() {
-      const results = getEl('total-report-results');
-      const groups = getGroupedReportRows();
-      const rows = groups.flatMap((group) => group.rows);
+    function getDashboardExportData() {
+      const rows = getCurrentDashboardRows();
+      const teamTotals = getTeamTotals(rows);
+      const totalTeams = teamTotals.length;
+      const totalDays = new Set(rows.map((row) => `${row.team}||${row.date}`)).size;
+      const totalPcCount = rows.reduce((total, row) => total + row.pcCount, 0);
+      const totalPc = rows.reduce((total, row) => total + row.pcTotal, 0);
+      const topTeam = teamTotals[0];
+      const averageByTeam = totalTeams === 0 ? 0 : totalPc / totalTeams;
 
-      if (rows.length === 0) {
-        results.innerHTML = '<div class="empty">Inclua planilhas para gerar o relatório total.</div>';
-        return;
-      }
+      return {
+        selectedTeam: getEl('team-filter').value || 'Todas as equipes',
+        metrics: [
+          ['Equipes no resumo', totalTeams],
+          ['Dias com lançamento', totalDays],
+          ['Lançamentos de P / C', totalPcCount],
+          ['Soma geral de P / C', formatValue(totalPc)],
+          ['Equipe com maior soma', topTeam ? topTeam.team : '-'],
+          ['Soma da equipe líder', topTeam ? formatValue(topTeam.total) : '0'],
+          ['Média por equipe', formatValue(averageByTeam)],
+          ['Planilhas carregadas', state.files]
+        ],
+        rankingTotal: teamTotals,
+        rankingCount: teamTotals
+      };
+    }
 
-      const grandMain = rows.reduce((total, row) => total + row.mainTotal, 0);
-      const grandMeasurement = rows.reduce((total, row) => total + row.measurementTotal, 0);
-      const grandDifference = rows.reduce((total, row) => total + row.difference, 0);
-      const table = document.createElement('table');
-      table.innerHTML = `
-        <thead>
-          <tr>
-            <th>Equipe</th>
-            <th>Data</th>
-            <th class="number">Total</th>
-            <th class="number">Total medição</th>
-            <th class="number">Diferença</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="2">Total geral</td>
-            <td class="number"></td>
-            <td class="number"></td>
-            <td class="number"></td>
-          </tr>
-        </tfoot>
+    function getLogoSrc() {
+      const logo = document.querySelector('.brand-logo');
+      return logo ? logo.src : '';
+    }
+
+    function buildDashboardExportHtml(data) {
+      const metricRows = data.metrics.map((item) => `
+        <tr>
+          <td>${escapeHtml(item[0])}</td>
+          <td>${escapeHtml(item[1])}</td>
+        </tr>
+      `).join('');
+      const totalRankingRows = data.rankingTotal.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.team)}</td>
+          <td>${formatValue(item.total)}</td>
+        </tr>
+      `).join('');
+      const countRankingRows = data.rankingCount.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.team)}</td>
+          <td>${item.count}</td>
+        </tr>
+      `).join('');
+
+      return `
+        <h2>Dashboard</h2>
+        <p>Filtro atual: ${escapeHtml(data.selectedTeam)}</p>
+        <table class="summary-table">
+          <tbody>${metricRows}</tbody>
+        </table>
+        <h3>Ranking por soma de P / C</h3>
+        <table>
+          <thead><tr><th>Equipe</th><th>Total</th></tr></thead>
+          <tbody>${totalRankingRows || '<tr><td colspan="2">Sem dados</td></tr>'}</tbody>
+        </table>
+        <h3>Ranking por quantidade de lançamentos</h3>
+        <table>
+          <thead><tr><th>Equipe</th><th>Lançamentos</th></tr></thead>
+          <tbody>${countRankingRows || '<tr><td colspan="2">Sem dados</td></tr>'}</tbody>
+        </table>
       `;
-
-      const tbody = table.querySelector('tbody');
-      groups.forEach((group) => {
-        group.rows.forEach((row, index) => {
-          const tr = document.createElement('tr');
-
-          if (index === 0) {
-            const teamCell = document.createElement('td');
-            teamCell.textContent = group.team;
-            teamCell.rowSpan = group.rows.length + 1;
-            teamCell.className = 'team-cell';
-            teamCell.style.backgroundColor = getTeamColor(group.team);
-            tr.appendChild(teamCell);
-          }
-
-          tr.innerHTML += `
-            <td></td>
-            <td class="number"></td>
-            <td class="number"></td>
-            <td class="number"></td>
-          `;
-
-          tr.children[index === 0 ? 1 : 0].textContent = row.date;
-          tr.children[index === 0 ? 2 : 1].textContent = formatValue(row.mainTotal);
-          tr.children[index === 0 ? 3 : 2].textContent = formatValue(row.measurementTotal);
-          tr.children[index === 0 ? 4 : 3].textContent = formatValue(row.difference);
-          tbody.appendChild(tr);
-        });
-
-        const totalRow = document.createElement('tr');
-        totalRow.className = 'team-total';
-        totalRow.innerHTML = `
-          <td>Total da equipe</td>
-          <td class="number"></td>
-          <td class="number"></td>
-          <td class="number"></td>
-        `;
-        totalRow.children[1].textContent = formatValue(group.mainTotal);
-        totalRow.children[2].textContent = formatValue(group.measurementTotal);
-        totalRow.children[3].textContent = formatValue(group.difference);
-        tbody.appendChild(totalRow);
-      });
-
-      const footerCells = table.querySelectorAll('tfoot td');
-      footerCells[1].textContent = formatValue(grandMain);
-      footerCells[2].textContent = formatValue(grandMeasurement);
-      footerCells[3].textContent = formatValue(grandDifference);
-
-      results.innerHTML = '';
-      results.appendChild(table);
     }
 
-    function getReportExportRows() {
-      return getGroupedReportRows().flatMap((group) => {
-        const rows = group.rows.map((row) => ({
-          Equipe: row.team,
-          Data: row.date,
-          Total: row.mainTotal,
-          'Total medição': row.measurementTotal,
-          Diferença: row.difference
-        }));
+    function buildReportRowsHtml(rows) {
+      return rows.map((row) => {
+        const teamColor = getExportTeamColor(row.team);
 
-        rows.push({
-          Equipe: group.team,
-          Data: 'Total da equipe',
-          Total: group.mainTotal,
-          'Total medição': group.measurementTotal,
-          Diferença: group.difference
-        });
+        return `
+        <tr style="background-color: ${teamColor};">
+          <td class="export-team-cell" style="background-color: ${teamColor};">${escapeHtml(row.team)}</td>
+          <td style="background-color: ${teamColor};">${escapeHtml(row.date)}</td>
+          <td style="background-color: ${teamColor};">${formatValue(row.mainTotal)}</td>
+          <td style="background-color: ${teamColor};">${formatValue(row.measurementTotal)}</td>
+          <td style="background-color: ${teamColor};">${formatValue(row.difference)}</td>
+        </tr>
+      `;
+      }).join('');
+    }
 
-        return rows;
-      });
+    function buildReportDocumentHtml() {
+      const rows = getComparisonReportRows();
+      const balance = rows.reduce((total, row) => total + row.difference, 0);
+      const logoSrc = getLogoSrc();
+
+      return {
+        rows,
+        html: `
+          <!doctype html>
+          <html lang="pt-BR">
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, Helvetica, sans-serif; color: #17202a; }
+              .report-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+              .report-header img { width: 120px; height: 70px; object-fit: cover; }
+              h1 { font-size: 20px; margin: 0; }
+              h2 { font-size: 15px; margin: 18px 0 8px; }
+              h3 { font-size: 13px; margin: 14px 0 6px; }
+              p { margin: 0 0 10px; color: #52616d; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; }
+              th, td { border: 1px solid #dbe2ea; padding: 6px; text-align: left; }
+              th { background: #edf2f7; }
+              .export-team-cell { color: #183441; font-weight: 700; }
+              td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: right; }
+              .summary-table td:nth-child(2) { text-align: right; font-weight: 700; }
+              tfoot td { background: #f3f9fc; font-weight: 700; }
+            </style>
+          </head>
+          <body>
+            <div class="report-header">
+              <img src="${escapeHtml(logoSrc)}" alt="VIATECH Cidades Inteligentes">
+              <h1>Relatório</h1>
+            </div>
+            <h2>Relatório</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Equipe</th>
+                  <th>Data</th>
+                  <th>Lanç. Sistema</th>
+                  <th>Medição</th>
+                  <th>Diferença</th>
+                </tr>
+              </thead>
+              <tbody>${buildReportRowsHtml(rows)}</tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4">Saldo das diferenças</td>
+                  <td>${formatValue(balance)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </body>
+          </html>
+        `
+      };
     }
 
     function exportReportXls() {
-      const groups = getGroupedReportRows();
-      if (groups.length === 0) return;
+      const report = buildReportDocumentHtml();
+      if (report.rows.length === 0) {
+        setStatus('Inclua dados antes de salvar o relatório.', 'warning');
+        return;
+      }
 
-      const logoSrc = getLogoSrc();
-      const tableRows = groups.map((group) => {
-        const dayRows = group.rows.map((row, index) => `
-          <tr>
-            ${index === 0 ? `<td rowspan="${group.rows.length + 1}">${escapeHtml(group.team)}</td>` : ''}
-            <td>${escapeHtml(row.date)}</td>
-            <td>${formatValue(row.mainTotal)}</td>
-            <td>${formatValue(row.measurementTotal)}</td>
-            <td>${formatValue(row.difference)}</td>
-          </tr>
-        `).join('');
-
-        return `${dayRows}
-          <tr class="team-total">
-            <td>Total da equipe</td>
-            <td>${formatValue(group.mainTotal)}</td>
-            <td>${formatValue(group.measurementTotal)}</td>
-            <td>${formatValue(group.difference)}</td>
-          </tr>`;
-      }).join('');
-
-      const html = `
-        <!doctype html>
-        <html lang="pt-BR">
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, Helvetica, sans-serif; color: #17202a; }
-            .report-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-            .report-header img { width: 120px; height: 70px; object-fit: cover; }
-            h1 { font-size: 20px; margin: 0; }
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
-            th, td { border: 1px solid #dbe2ea; padding: 6px; text-align: left; }
-            th { background: #edf2f7; }
-            .team-total td { background: #f3f9fc; font-weight: 700; }
-            td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: right; }
-          </style>
-        </head>
-        <body>
-          <div class="report-header">
-            <img src="${escapeHtml(logoSrc)}" alt="VIATECH Cidades Inteligentes">
-            <h1>Relatório total</h1>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Equipe</th>
-                <th>Data</th>
-                <th>Total</th>
-                <th>Total medição</th>
-                <th>Diferença</th>
-              </tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
-          </table>
-        </body>
-        </html>
-      `;
-
-      const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const blob = new Blob(['\ufeff', report.html], { type: 'application/vnd.ms-excel;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'relatorio-total.xls';
+      link.download = 'relatorio.xls';
       link.click();
       URL.revokeObjectURL(link.href);
+    }
+
+    function exportReportPdf() {
+      const report = buildReportDocumentHtml();
+      if (report.rows.length === 0) {
+        setStatus('Inclua dados antes de salvar o relatório.', 'warning');
+        return;
+      }
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(report.html);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
     }
 
     function escapeHtml(value) {
@@ -1951,79 +1897,6 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
-    }
-
-    function getLogoSrc() {
-      const logo = document.querySelector('.brand-logo');
-      return logo ? logo.src : '';
-    }
-
-    function exportReportPdf() {
-      const groups = getGroupedReportRows();
-      if (groups.length === 0) return;
-      const logoSrc = getLogoSrc();
-
-      const tableRows = groups.map((group) => {
-        const dayRows = group.rows.map((row, index) => `
-          <tr>
-            ${index === 0 ? `<td rowspan="${group.rows.length + 1}">${escapeHtml(group.team)}</td>` : ''}
-            <td>${escapeHtml(row.date)}</td>
-            <td>${formatValue(row.mainTotal)}</td>
-            <td>${formatValue(row.measurementTotal)}</td>
-            <td>${formatValue(row.difference)}</td>
-          </tr>
-        `).join('');
-
-        return `${dayRows}
-          <tr class="team-total">
-            <td>Total da equipe</td>
-            <td>${formatValue(group.mainTotal)}</td>
-            <td>${formatValue(group.measurementTotal)}</td>
-            <td>${formatValue(group.difference)}</td>
-          </tr>`;
-      }).join('');
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <!doctype html>
-        <html lang="pt-BR">
-        <head>
-          <meta charset="utf-8">
-          <title>Relatório total</title>
-          <style>
-            body { font-family: Arial, Helvetica, sans-serif; color: #17202a; }
-            .report-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-            .report-header img { width: 120px; height: 70px; object-fit: cover; }
-            h1 { font-size: 20px; margin: 0; }
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
-            th, td { border: 1px solid #dbe2ea; padding: 6px; text-align: left; }
-            th { background: #edf2f7; }
-            .team-total td { background: #f3f9fc; font-weight: 700; }
-            td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: right; }
-          </style>
-        </head>
-        <body>
-          <div class="report-header">
-            <img src="${escapeHtml(logoSrc)}" alt="VIATECH Cidades Inteligentes">
-            <h1>Relatório total</h1>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Equipe</th>
-                <th>Data</th>
-                <th>Total</th>
-                <th>Total medição</th>
-                <th>Diferença</th>
-              </tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
-          </table>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
     }
 
     function readFile(file, targetState = state, statusSetter = setStatus) {
@@ -2101,7 +1974,6 @@
 
       event.target.value = '';
       renderResults();
-      renderTotalReport();
       resetVerification();
 
       if (imported > 0) {
@@ -2117,7 +1989,6 @@
       getEl('spreadsheet-input').value = '';
       setStatus('');
       renderResults();
-      renderTotalReport();
       resetVerification();
     });
 
@@ -2176,7 +2047,6 @@
 
       event.target.value = '';
       renderTeamMeasurementResults();
-      renderTotalReport();
       resetVerification();
 
       if (imported > 0) {
@@ -2192,7 +2062,6 @@
       getEl('team-measurement-input').value = '';
       setTeamMeasurementStatus('');
       renderTeamMeasurementResults();
-      renderTotalReport();
       resetVerification();
     });
 
@@ -2213,14 +2082,12 @@
       setTheme(nextTheme);
       renderResults();
       renderTeamMeasurementResults();
-      renderTotalReport();
     });
 
     initializeTheme();
     renderResults();
     renderMeasurementResults();
     renderTeamMeasurementResults();
-    renderTotalReport();
     resetVerification();
   </script>
 </body>
